@@ -11,7 +11,7 @@ const plateRoutes = require("./routes/plateRoutes");
 const tableRoutes = require("./routes/tableRoutes");
 const ingredientRoutes = require("./routes/ingredientsRoutes");
 const authRoutes = require("./routes/authRoutes");
-const workerRoutes = require("./routes/workerRoutes");
+const userRoutes = require("./routes/userRoutes");
 
 const app = express();
 
@@ -23,7 +23,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}))
 
 app.use("/auth", authRoutes)    
-app.use("/worker", workerRoutes)
+app.use("/user", userRoutes)
 app.use("/menu", plateRoutes)
 app.use("/table", tableRoutes)
 app.use("/ingredient", ingredientRoutes)

@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 const fs = require('fs');
 const path = require('path');
@@ -16,6 +16,12 @@ if (config.use_env_variable) {
   sequelize = new Sequelize(config.database, config.username, config.password, config);
 }
 
+// Autenticación inicial de Sequelize
+sequelize.authenticate()
+  .then(() => console.log('✅ Conexión establecida con Sequelize'))
+  .catch(err => console.error('❌ Error al conectar con Sequelize:', err.message));
+
+// Cargar todos los modelos
 fs
   .readdirSync(__dirname)
   .filter(file => {
@@ -31,6 +37,7 @@ fs
     db[model.name] = model;
   });
 
+// Ejecutar asociaciones si existen
 Object.keys(db).forEach(modelName => {
   if (db[modelName].associate) {
     db[modelName].associate(db);
@@ -41,7 +48,3 @@ db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
 module.exports = db;
-
-db.sequelize.authenticate()
-  .then(() => console.log('✅ Conexión establecida con Sequelize'))
-  .catch(err => console.error('❌ Error al conectar con Sequelize:', err.message));

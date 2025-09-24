@@ -1,28 +1,27 @@
-const { worker } = require("../models");
+const { User } = require("../models");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
 const login = async (req, res) => {
   try {
-
     const { email, password } = req.body;
 
     // Buscar usuario por email
-    const Worker = await worker.findOne({ where: { email } });
+    const user = await User.findOne({ where: { email } }); // ← usar minúscula
 
-    if (!Worker) {
+    if (!user) {
       return res.status(400).json({ error: "Usuario no encontrado." });
     }
 
     // Validar contraseña
-    const esPasswordCorrecto = await bcrypt.compare(password, Worker.password);
+    const esPasswordCorrecto = await bcrypt.compare(password, user.password);
     if (!esPasswordCorrecto) {
       return res.status(401).json({ error: "Contraseña incorrecta." });
     }
 
     // Generar token JWT
     const token = jwt.sign(
-      { id: Worker.id, email: Worker.email },
+      { id: user.id, email: user.email },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
