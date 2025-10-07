@@ -31,7 +31,8 @@ const UserController = {
       if (findError && findError.code !== "PGRST116") throw findError; // PGRST116 = no encontrado
 
       if (existingUser) {
-        return res.status(400).json({ error: "El usuario ya existe" });
+        // Cambia el mensaje aquí:
+        return res.status(400).json({ error: "El correo ya está registrado" });
       }
 
       const passwordH = await bcrypt.hash(password, 10);
@@ -46,7 +47,7 @@ const UserController = {
 
       res.status(201).json(newUser);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: error.message || "Error interno del servidor" });
     }
   },
 
