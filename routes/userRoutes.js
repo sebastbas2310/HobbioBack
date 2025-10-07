@@ -1,12 +1,13 @@
-    const express = require("express");
-    const router = express.Router();
-    const userController = require("../controller/userController");
-    const authService = require("../services/authService")  
+import { Router } from "express";
+import UserController from "../controller/userController.js"; // ✅ default import
+import authService from "../services/authService.js";
 
-    router.get("/", userController.getUser);
-    router.post("/adduser",userController.addUser);
-    router.post("/:id",authService, userController.updateUser);
-    router.post("/ChangeStatus/:id", authService,userController.changeUserStatus);
-    router.get("/:id", authService,userController.getUserById);
+const router = Router();
 
-    module.exports = router;
+router.get("/", UserController.getUser);
+router.post("/adduser", UserController.addUser);
+router.post("/:id", authService, UserController.updateUser);
+router.post("/ChangeStatus/:id", authService, UserController.changeUserStatus);
+router.get("/:id", authService, UserController.getUserById);
+
+export default router;

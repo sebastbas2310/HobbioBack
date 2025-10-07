@@ -1,8 +1,7 @@
 // models/User.js
-'use strict';
-const { Model } = require('sequelize');
+import { Model } from "sequelize";
 
-module.exports = (sequelize, DataTypes) => {
+export default (sequelize, DataTypes) => {
   class User extends Model {
     static associate(models) {
       // Aquí puedes definir relaciones si es necesario
@@ -51,8 +50,8 @@ module.exports = (sequelize, DataTypes) => {
     },
     {
       sequelize,
-      modelName: 'User',  // mayúscula para coincidir con la clase
-      tableName: 'user',
+      modelName: "Users",  // mayúscula para coincidir con la clase
+      tableName: "users",
       timestamps: true,
     }
   );

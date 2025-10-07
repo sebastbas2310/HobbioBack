@@ -1,44 +1,58 @@
-'use strict';
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import process from "process";
+import { Sequelize, DataTypes } from "sequelize";
+import configFile from "../config/config.js";
 
-const fs = require('fs');
-const path = require('path');
-const Sequelize = require('sequelize');
-const process = require('process');
+// Necesario para reemplazar __dirname en ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const basename = path.basename(__filename);
-const env = process.env.NODE_ENV || 'development';
-const config = require(__dirname + '/../config/config.js')[env];
+const env = process.env.NODE_ENV || "development";
+const config = configFile[env];
 const db = {};
 
+// Inicializar Sequelize
 let sequelize;
 if (config.use_env_variable) {
   sequelize = new Sequelize(process.env[config.use_env_variable], config);
 } else {
-  sequelize = new Sequelize(config.database, config.username, config.password, config);
+  sequelize = new Sequelize(
+    config.database,
+    config.username,
+    config.password,
+    config
+  );
 }
 
-// Autenticación inicial de Sequelize
-sequelize.authenticate()
-  .then(() => console.log('✅ Conexión establecida con Sequelize'))
-  .catch(err => console.error('❌ Error al conectar con Sequelize:', err.message));
+// Autenticación inicial
+sequelize
+  .authenticate()
+  .then(() => console.log("✅ Conexión establecida con Sequelize"))
+  .catch((err) =>
+    console.error("❌ Error al conectar con Sequelize:", err.message)
+  );
 
-// Cargar todos los modelos
-fs
-  .readdirSync(__dirname)
-  .filter(file => {
+// Cargar todos los modelos dinámicamente
+fs.readdirSync(__dirname)
+  .filter((file) => {
     return (
-      file.indexOf('.') !== 0 &&
+      file.indexOf(".") !== 0 &&
       file !== basename &&
-      file.slice(-3) === '.js' &&
-      file.indexOf('.test.js') === -1
+      file.slice(-3) === ".js" &&
+      !file.endsWith(".test.js")
     );
   })
-  .forEach(file => {
-    const model = require(path.join(__dirname, file))(sequelize, Sequelize.DataTypes);
+  .forEach(async (file) => {
+    const modelModule = await import(path.join(__dirname, file));
+    const model = modelModule.default(sequelize, DataTypes);
     db[model.name] = model;
   });
 
-// Ejecutar asociaciones si existen
-Object.keys(db).forEach(modelName => {
+// Ejecutar asociaciones
+Object.keys(db).forEach((modelName) => {
   if (db[modelName].associate) {
     db[modelName].associate(db);
   }
@@ -47,4 +61,4 @@ Object.keys(db).forEach(modelName => {
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
-module.exports = db;
+export default db;

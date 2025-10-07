@@ -1,20 +1,24 @@
-const jwt = require("jsonwebtoken")
+import jwt from "jsonwebtoken";
 
-const authService = (req, res, next) =>{
-    const token = req.header("Authorization")
+const authService = (req, res, next) => {
+  const token = req.header("Authorization");
 
-    if(!token){
-        return res.status(401).json({error:"Acceso denegado. Token no proporcionado"})
-    }
+  if (!token) {
+    return res
+      .status(401)
+      .json({ error: "Acceso denegado. Token no proporcionado" });
+  }
 
-    try{
-        const decoded = jwt.verify(token.replace("Bearer ", ""), process.env.JWT_SECRET)
-        req.usuario = decoded;
-        next();
-    }catch(error){
-        return res.status(403).json({error:"El token ha expirado"});
-    }
-}
+  try {
+    const decoded = jwt.verify(
+      token.replace("Bearer ", ""),
+      process.env.JWT_SECRET
+    );
+    req.usuario = decoded;
+    next();
+  } catch (error) {
+    return res.status(403).json({ error: "El token ha expirado o es inválido" });
+  }
+};
 
-
-module.exports = authService;
+export default authService;

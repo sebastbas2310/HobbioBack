@@ -1,36 +1,36 @@
-const { User } = require("../models");
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
+import { supabase } from "../config/supabaseClient.js";
+import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
 
-const login = async (req, res) => {
+export const login = async (req, res) => {
+  const { email, password } = req.body;
+
   try {
-    const { email, password } = req.body;
+    // Buscar usuario en la tabla "user"
+    const { data: users, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", email)
+      .single(); // `.single()` devuelve un objeto en lugar de array
 
-    // Buscar usuario por email
-    const user = await User.findOne({ where: { email } }); // ← usar minúscula
-
-    if (!user) {
-      return res.status(400).json({ error: "Usuario no encontrado." });
+    if (error || !users) {
+      return res.status(400).json({ error: "Usuario no encontrado" });
     }
 
-    // Validar contraseña
-    const esPasswordCorrecto = await bcrypt.compare(password, user.password);
+    const esPasswordCorrecto = await bcrypt.compare(password, users.password);
     if (!esPasswordCorrecto) {
-      return res.status(401).json({ error: "Contraseña incorrecta." });
+      return res.status(401).json({ error: "Contraseña incorrecta" });
     }
-
-    // Generar token JWT
+    
     const token = jwt.sign(
-      { id: user.id, email: user.email },
+      { id: users.user_id, email: users.email },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
 
     res.json({ token });
-  } catch (error) {
-    console.error("Error en login:", error);
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Error interno del servidor" });
   }
 };
-
-module.exports = { login };
