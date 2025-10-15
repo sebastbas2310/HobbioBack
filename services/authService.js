@@ -1,27 +1,38 @@
 import jwt from "jsonwebtoken";
 
 const authService = (req, res, next) => {
-  const token = req.header("Authorization");
+  // Usa headers en minúsculas (Express los normaliza así)
+  const authHeader = req.headers.authorization;
+  console.log("🔹 Encabezado Authorization recibido:", authHeader);
 
-  console.log("Token recibido:", token); // <-- Log para ver el token recibido
-
-  if (!token) {
+  // Validar existencia del encabezado
+  if (!authHeader) {
     return res
       .status(401)
-      .json({ error: "Acceso denegado. Token no proporcionado" });
+      .json({ error: "Acceso denegado. No se proporcionó un token." });
   }
 
+  // Extraer el token (eliminar 'Bearer ')
+  const token = authHeader.startsWith("Bearer ")
+    ? authHeader.slice(7).trim()
+    : authHeader.trim();
+
+  console.log("🔹 Token limpio:", token);
+
   try {
-    const decoded = jwt.verify(
-      token.replace("Bearer ", ""),
-      process.env.JWT_SECRET
-    );
-    console.log("Token decodificado:", decoded); // <-- Log para ver el payload decodificado
+    // Verificar el token con el mismo secreto usado al crearlo
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log("✅ Token decodificado correctamente:", decoded);
+
+    // Guardar el usuario en la request para uso posterior
     req.usuario = decoded;
-    next();
+
+    next(); // 👈 continuar a la siguiente función (el controlador)
   } catch (error) {
-    console.log("Error al verificar token:", error); // <-- Log para ver errores de verificación
-    return res.status(403).json({ error: "El token ha expirado o es inválido" });
+    console.error("❌ Error al verificar token:", error.message);
+    return res
+      .status(403)
+      .json({ error: "El token ha expirado o es inválido." });
   }
 };
 

@@ -1,4 +1,3 @@
-// controller/userController.js
 import bcrypt from "bcryptjs";
 import { supabase } from "../config/supabaseClient.js";
 
@@ -21,17 +20,14 @@ const UserController = {
         return res.status(400).json({ error: "La contraseña es obligatoria" });
       }
 
-      // Revisar si el usuario ya existe
       const { data: existingUser, error: findError } = await supabase
         .from("users")
         .select("*")
         .eq("email", email)
         .single();
 
-      if (findError && findError.code !== "PGRST116") throw findError; // PGRST116 = no encontrado
-
+      if (findError && findError.code !== "PGRST116") throw findError;
       if (existingUser) {
-        // Cambia el mensaje aquí:
         return res.status(400).json({ error: "El correo ya está registrado" });
       }
 
@@ -44,7 +40,6 @@ const UserController = {
         .single();
 
       if (insertError) throw insertError;
-
       res.status(201).json(newUser);
     } catch (error) {
       res.status(500).json({ error: error.message || "Error interno del servidor" });
@@ -117,10 +112,52 @@ const UserController = {
         .single();
 
       if (error) throw error;
-
       res.status(200).json(user);
     } catch (error) {
       res.status(500).json({ error: error.message });
+    }
+  },
+
+  // ✅ Nuevo método para cambiar contraseña
+  changePassword: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { currentPassword, newPassword } = req.body;
+
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ error: "Faltan datos requeridos." });
+      }
+
+      // 1️⃣ Obtener usuario actual
+      const { data: user, error: userError } = await supabase
+        .from("users")
+        .select("password")
+        .eq("user_id", id)
+        .single();
+
+      if (userError || !user) {
+        return res.status(404).json({ error: "Usuario no encontrado." });
+      }
+
+      // 2️⃣ Verificar contraseña actual
+      const isMatch = await bcrypt.compare(currentPassword, user.password);
+      if (!isMatch) {
+        return res.status(400).json({ error: "La contraseña actual es incorrecta." });
+      }
+
+      // 3️⃣ Encriptar y actualizar
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      const { error: updateError } = await supabase
+        .from("users")
+        .update({ password: hashedPassword })
+        .eq("user_id", id);
+
+      if (updateError) throw updateError;
+
+      res.status(200).json({ message: "Contraseña actualizada correctamente." });
+    } catch (error) {
+      console.error("Error en changePassword:", error);
+      res.status(500).json({ error: error.message || "Error interno del servidor." });
     }
   },
 };
