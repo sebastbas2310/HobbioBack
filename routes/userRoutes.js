@@ -1,13 +1,17 @@
-import { Router } from "express";
-import UserController from "../controller/userController.js"; // ✅ default import
-import authService from "../services/authService.js";
+// routes/userRoutes.js
+import express from "express";
+import UserController from "../controller/userController.js";
 
-const router = Router();
+const router = express.Router();
 
+// Rutas de usuarios
 router.get("/", UserController.getUser);
-router.post("/adduser", UserController.addUser);
-router.post("/:id", authService, UserController.updateUser);
-router.post("/ChangeStatus/:id", authService, UserController.changeUserStatus);
-router.get("/:id", authService, UserController.getUserById);
+router.get("/:id", UserController.getUserById);
+router.post("/", UserController.addUser);
+router.put("/:id", UserController.updateUser);
+router.patch("/:id/status", UserController.changeUserStatus);
+
+// 🔹 Nueva ruta para cambiar contraseña
+router.put("/:id/change-password", UserController.changePassword);
 
 export default router;

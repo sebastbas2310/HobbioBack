@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { supabase } from "../config/supabaseClient.js";
 
 const UserController = {
+  // Obtener todos los usuarios
   getUser: async (req, res) => {
     try {
       const { data: users, error } = await supabase.from("users").select("*");
@@ -13,6 +14,7 @@ const UserController = {
     }
   },
 
+  // Agregar nuevo usuario
   addUser: async (req, res) => {
     try {
       const { user_name, user_status, email, password, things_like, phone_number } = req.body;
@@ -21,17 +23,16 @@ const UserController = {
         return res.status(400).json({ error: "La contraseña es obligatoria" });
       }
 
-      // Revisar si el usuario ya existe
+      // Verificar si ya existe el usuario
       const { data: existingUser, error: findError } = await supabase
         .from("users")
         .select("*")
         .eq("email", email)
         .single();
 
-      if (findError && findError.code !== "PGRST116") throw findError; // PGRST116 = no encontrado
+      if (findError && findError.code !== "PGRST116") throw findError;
 
       if (existingUser) {
-        // Cambia el mensaje aquí:
         return res.status(400).json({ error: "El correo ya está registrado" });
       }
 
@@ -51,6 +52,7 @@ const UserController = {
     }
   },
 
+  // Actualizar datos de usuario
   updateUser: async (req, res) => {
     try {
       const { id } = req.params;
@@ -82,6 +84,7 @@ const UserController = {
     }
   },
 
+  // Cambiar estado del usuario
   changeUserStatus: async (req, res) => {
     try {
       const { id } = req.params;
@@ -106,6 +109,7 @@ const UserController = {
     }
   },
 
+  // Obtener usuario por ID
   getUserById: async (req, res) => {
     try {
       const { id } = req.params;
@@ -119,6 +123,54 @@ const UserController = {
       if (error) throw error;
 
       res.status(200).json(user);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  },
+
+  // 🔹 Cambiar contraseña del usuario
+  changePassword: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { oldPassword, newPassword } = req.body;
+
+      if (!oldPassword || !newPassword) {
+        return res.status(400).json({ error: "Debes proporcionar la contraseña actual y la nueva." });
+      }
+
+      // 1️⃣ Buscar usuario
+      const { data: user, error: userError } = await supabase
+        .from("users")
+        .select("password")
+        .eq("user_id", id)
+        .single();
+
+      if (userError) throw userError;
+      if (!user) return res.status(404).json({ error: "Usuario no encontrado." });
+
+      // 2️⃣ Verificar contraseña actual
+      const isMatch = await bcrypt.compare(oldPassword, user.password);
+      if (!isMatch) {
+        return res.status(401).json({ error: "La contraseña actual es incorrecta." });
+      }
+
+      // 3️⃣ Hashear nueva contraseña
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      // 4️⃣ Actualizar en base de datos
+      const { data: updatedUser, error: updateError } = await supabase
+        .from("users")
+        .update({ password: hashedPassword })
+        .eq("user_id", id)
+        .select()
+        .single();
+
+      if (updateError) throw updateError;
+
+      res.status(200).json({
+        message: "Contraseña actualizada correctamente.",
+        user: updatedUser,
+      });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
